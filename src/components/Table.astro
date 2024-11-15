@@ -1,0 +1,72 @@
+---
+import {
+  type CollectionKey,
+  type CollectionEntry,
+  getCollection,
+} from "astro:content";
+
+interface Props {
+  collection: CollectionKey;
+}
+
+const { collection } = Astro.props as Props;
+let entries: CollectionEntry<any>[] = [];
+
+try {
+  entries = await getCollection(collection);
+} catch (error) {
+  console.error(`Collection ${collection} does not exist.`);
+  return;
+}
+
+//console.log(rows[5].data); // {}
+---
+
+<h2>Table for {collection}</h2>
+{
+  entries.length > 0 ? (
+    <table>
+      <tr id={`${collection}-columns`}>
+        {Object.keys(entries[0].data).map((column) => (
+          <th>{column}</th>
+        ))}
+      </tr>
+      {entries.map((row) => (
+        <tr id={`${collection}-${row.id}`}>
+          {Object.values(row.data).map((value) => (
+            <td>{value}</td>
+          ))}
+        </tr>
+      ))}
+    </table>
+  ) : (
+    <p>No data available for collection {collection}.</p>
+  )
+}
+
+<style>
+  table {
+    font-family: Arial, Helvetica, sans-serif;
+    border-collapse: collapse;
+    max-width: 100%;
+    margin: 100px 0px 100px 0px;
+    td,
+    th {
+      border: 1px solid #ddd;
+      padding: 8px;
+    }
+    tr:nth-child(even) {
+      background-color: #f2f2f2;
+    }
+    tr:hover {
+      background-color: #ddd;
+    }
+    th {
+      padding-top: 12px;
+      padding-bottom: 12px;
+      text-align: left;
+      background-color: #04aa6d;
+      color: white;
+    }
+  }
+</style>

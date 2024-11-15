@@ -1,0 +1,33 @@
+---
+import Table from "../components/Table.astro";
+
+// manual list of collections from content/config.ts
+const collectionNames = [
+  "crm",
+  "toContact",
+  "sheetName",
+  "shiftedHours",
+  // beware of errors:
+  /*
+  "badDocument",
+  "badQuery",
+  "badRange",
+  "badColumns",
+  "badMandatory",
+  "badData",
+  "badResponse"
+  */
+];
+---
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Astro Sheet Loader</title>
+  </head>
+  <body>
+    <h1>Tables generated from Astro Sheet Loader</h1>
+    {/* Generate one table per collection */}
+    {collectionNames.map((collection) => <Table collection={collection} />)}
+  </body>
+</html>

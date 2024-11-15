@@ -1,0 +1,46 @@
+{
+  "name": "astro-sheet-loader",
+  "version": "1.0.0",
+  "description": "This package provides a Google Sheets loader for Astro. It allows you to load and parse publicly viewable Sheets, and use the data in your Astro site.",
+  "main": "loader/index.js",
+  "files": [
+    "loader/*"
+  ],
+  "type": "module",
+  "scripts": {
+    "test": "astro check && astro build && vitest",
+    "format": "prettier --write .",
+    "dev": "astro dev",
+    "build": "astro build",
+    "preview": "astro preview"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/AlphaJack/astro-sheet-loader.git"
+  },
+  "keywords": [
+    "astro",
+    "loader",
+    "astro-loader",
+    "spreadsheet",
+    "google-sheets",
+    "excel",
+    "astro-content-layer"
+  ],
+  "author": "AlphaJack",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/AlphaJack/astro-sheet-loader/issues"
+  },
+  "homepage": "https://github.com/AlphaJack/astro-sheet-loader#readme",
+  "devDependencies": {
+    "@astrojs/check": "^0.9.4",
+    "prettier": "^3.3.3",
+    "prettier-plugin-astro": "^0.14.1",
+    "typescript": "^5.6.3",
+    "vitest": "^2.1.4"
+  },
+  "dependencies": {
+    "astro": "^4.14.0"
+  }
+}
