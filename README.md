@@ -10,13 +10,13 @@ Data is fetched using the [Google Visualization API](https://developers.google.c
 
 In Google Sheets, create a document, give it a name and write some tabular data.
 
-Recommended: Click Format > Convert to Table, and make sure to check the appropriate column type and that there are no different data types within each table column.
+Recommended: Click Format > Convert to Table, choose the appropriate column type and make sure that there are no different data types within the same column.
 
-Edit the Share settings of the document, setting that "Anyone on the internet with the link can view".
+Edit the Share settings of the document, so that "Anyone on the internet with the link can view".
 
 ![](images/shareSettings.png)
 
-From the URL bar, copy the document ID and optionally the gid number of the sheet you need to use them in Astro.
+From the URL bar, copy the document ID and optionally the gid (grid ID) of the sheet you want to fetch data from.
 
 ![](images/documentID.png)
 
@@ -28,7 +28,9 @@ npm install astro-sheet-loader
 
 ## Usage
 
-This package requires Astro 4.14.0 or later. You must enable the experimental content layer in Astro unless you are using version 5.0.0-beta or later. You can do this by adding the following to your `astro.config.mjs`:
+This package requires Astro 4.14.0 or later.
+You must enable the experimental content layer in Astro unless you are using version 5.0.0-beta or later.
+You can do this by adding the following to your `astro.config.mjs`:
 
 ```javascript
 export default defineConfig({
@@ -50,6 +52,10 @@ const crm = defineCollection({
   loader: sheetLoader({
     document: "1wb2TbwRE-McOA663PGgf0InTsXC6b07ThEy_j6_MCDw",
   }),
+  // if you don't define a schema yourself, it will be automatically generated
+  // schema: z.object({
+  //
+  //})
 });
 
 export const collections = { crm };
@@ -95,12 +101,12 @@ const entries: CollectionEntry<"crm">[] = await getCollection("crm");
 The `sheetLoader` function takes an options object with the following properties:
 
 - `document` (mandatory): The Google Sheet document ID, found in the URL
-- `sheet` (optional, default: first sheet): The name of the sheet, found at the bottom of the page
 - `gid` (optional, default: first sheet): Number identifying the sheet, found in the URL
+- `sheet` (optional, default: first sheet): The name of the sheet, found at the bottom of the page
 - `range` (optional, default: select all): Range of cells to delimit the table
 - `query` (optional, default: select all): SQL-like query to filter results in the provided range, using the original column names. [Query documentation](https://developers.google.com/chart/interactive/docs/querylanguage)
-- `allowBlanks` (optional, default: all fields are mandatory): Allow for empty cells in data
-- `transformHeader` (optional, default: false): Pass a function like `camelCase` or `snake_case` to transform column names, or `false` to leave them as they are
+- `allowBlanks` (optional, default: all fields are mandatory): Allow for blank cells in your table
+- `transformHeader` (optional, default: `false`): Pass a function like `camelCase` or `snake_case` to transform column names
 
 ## Caveat
 
@@ -119,20 +125,20 @@ However, you should be aware of the following:
 
 ### Warnings and errors
 
-- if the provided sheet or gid do not exist, Google will silently return data for the default sheet (gid=0)
+- if the provided sheet or gid do not exist, Google will silently return data for the default sheet (the one with gid 0)
 - if the range or query do not return any entries, the loader will throw a warning
 - if the document is not publicly viewable or does not exist, the loader will throw an error
 - if an entry does not respect the user-provided or auto-generated schema, the loader will throw an error
 
-## Strange behavior
+### Inaccurate API response
 
-Despite doing everything correctly, the Sheets API may return nonsense data:
+Despite doing everything correctly, the Sheets API may return inaccurate data:
 
 - empty column names [Example](https://docs.google.com/spreadsheets/d/1wb2TbwRE-McOA663PGgf0InTsXC6b07ThEy_j6_MCDw/gviz/tq?tqx=out:html&sheet=log_data)
 - all entries are part of the column name [Example](https://docs.google.com/spreadsheets/d/1wb2TbwRE-McOA663PGgf0InTsXC6b07ThEy_j6_MCDw/gviz/tq?tqx=out:html&sheet=logs)
-- completely blank columns [Example](https://docs.google.com/spreadsheets/d/1h-oqlqJ_G3UXuDSkdFHuEaCVuOXQOb68y2sduXQRTn4/gviz/tq?tqx=out:html)
+- unnecessary, completely blank columns [Example](https://docs.google.com/spreadsheets/d/1h-oqlqJ_G3UXuDSkdFHuEaCVuOXQOb68y2sduXQRTn4/gviz/tq?tqx=out:html)
 
-If you have idea on how to tackle these cases, feel free to submit a PR!
+If you have an idea on how to tackle these cases, feel free to submit a PR!
 
 ## Special Thanks
 
