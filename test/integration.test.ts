@@ -15,7 +15,7 @@ describe("Astro (Online)", () => {
     const __filename = fileURLToPath(import.meta.url);
     const __dirname = path.dirname(__filename);
     console.log(__dirname);
-    const filePath = path.join(__dirname, "../dist/index.html");
+    const filePath = path.join(__dirname, "../demo/dist/index.html");
     const content = fs.readFileSync(filePath, "utf-8");
     // checks
     expect(content).toContain("-columns");
