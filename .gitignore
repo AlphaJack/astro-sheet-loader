@@ -3,3 +3,5 @@ node_modules/**
 .astro/**
 .DS_Store
 package/
+*.tgz*
+packages/*/README.md

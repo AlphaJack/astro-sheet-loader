@@ -1,6 +1,6 @@
 {
 	"name": "astro-sheet-loader",
-	"version": "1.0.3",
+	"version": "1.0.4",
 	"description": "This package provides a Google Sheets loader for Astro. It allows you to load and parse publicly viewable Sheets, and use the data in your Astro site.",
 	"author": "AlphaJack",
 	"license": "MIT",
@@ -24,11 +24,13 @@
 	"type": "module",
 	"main": "dist/index.js",
 	"types": "dist/index.d.ts",
-	"files": ["dist"],
+	"files": [
+		"dist"
+	],
 	"scripts": {
 		"dev": "tsup --watch",
 		"build": "tsup",
-		"readme": "cp ../../README.md dist/",
+		"readme": "cp ../../README.md .",
 		"prepublishOnly": "npm run build && npm run readme"
 	},
 	"dependencies": {
