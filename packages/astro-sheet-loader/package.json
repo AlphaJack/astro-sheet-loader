@@ -1,33 +1,35 @@
 {
-  "name": "astro-sheet-loader",
-  "version": "1.0.1",
-  "description": "This package provides a Google Sheets loader for Astro. It allows you to load and parse publicly viewable Sheets, and use the data in your Astro site.",
-  "main": "index.js",
-  "type": "module",
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/AlphaJack/astro-sheet-loader.git"
-  },
-  "keywords": [
-    "astro-component",
-    "withastro",
-    "astro-loader",
-    "spreadsheet",
-    "google-sheets",
-    "excel"
-  ],
-  "author": "AlphaJack",
-  "license": "MIT",
-  "bugs": {
-    "url": "https://github.com/AlphaJack/astro-sheet-loader/issues"
-  },
-  "homepage": "https://github.com/AlphaJack/astro-sheet-loader#readme",
-  "devDependencies": {
-    "@astrojs/check": "^0.9.4",
-    "typescript": "^5.6.3",
-    "vitest": "^2.1.4"
-  },
-  "dependencies": {
-    "astro": "^4.14.0"
-  }
+	"name": "astro-sheet-loader",
+	"version": "1.0.2",
+	"description": "This package provides a Google Sheets loader for Astro. It allows you to load and parse publicly viewable Sheets, and use the data in your Astro site.",
+	"author": "AlphaJack",
+	"license": "MIT",
+	"homepage": "https://github.com/AlphaJack/astro-sheet-loader#readme",
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/AlphaJack/astro-sheet-loader.git"
+	},
+	"bugs": {
+		"url": "https://github.com/AlphaJack/astro-sheet-loader/issues"
+	},
+	"keywords": [
+		"astro-component",
+		"withastro",
+		"astro-loader",
+		"spreadsheet",
+		"google-sheets",
+		"excel"
+	],
+	"type": "module",
+	"main": "dist/index.js",
+	"types": "dist/index.d.ts",
+	"files": ["dist"],
+	"scripts": {
+		"dev": "tsup --watch",
+		"build": "tsup",
+		"prepublishOnly": "npm run build"
+	},
+	"dependencies": {
+		"astro": "^4.14.0"
+	}
 }

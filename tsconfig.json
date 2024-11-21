@@ -1,0 +1,22 @@
+{
+	"extends": "astro/tsconfigs/base",
+	"compilerOptions": {
+		/* Base Options: */
+		"esModuleInterop": true,
+		"skipLibCheck": true,
+		"allowJs": false,
+		"resolveJsonModule": true,
+		"moduleDetection": "force",
+		"isolatedModules": true,
+		"verbatimModuleSyntax": true,
+		"strict": true,
+		"noUncheckedIndexedAccess": true,
+		"noImplicitOverride": true,
+		"declaration": true,
+		"declarationMap": true,
+		"module": "preserve",
+		"noEmit": true,
+		"lib": ["es2022", "dom"],
+		"types": ["node", "vitest"]
+	}
+}
