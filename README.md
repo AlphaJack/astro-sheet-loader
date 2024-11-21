@@ -2,9 +2,9 @@
 
 This package provides a Google Sheets loader for Astro. It allows you to load and parse publicly viewable Sheets, and use the data in your Astro site.
 
-Data is fetched using the [Google Visualization API](https://developers.google.com/chart/interactive/docs/reference) (gviz):
+Data is fetched using the [Google Visualization API](https://developers.google.com/chart/interactive/docs/reference) (gviz).
 
-![](images/logs.png)
+![](demo/public/images/logs.png)
 
 ## Sheet preparation
 
@@ -14,11 +14,11 @@ Recommended: Click Format > Convert to Table, choose the appropriate column type
 
 Edit the Share settings of the document, so that "Anyone on the internet with the link can view".
 
-![](images/shareSettings.png)
+![](demo/public/images/shareSettings.png)
 
 From the URL bar, copy the document ID and optionally the gid (grid ID) of the sheet you want to fetch data from.
 
-![](images/documentID.png)
+![](demo/public/images/documentID.png)
 
 ## Installation
 
@@ -47,6 +47,8 @@ You can then use the feed loader in your content configuration:
 // src/content/config.ts
 import { defineCollection } from "astro:content";
 import { sheetLoader } from "astro-sheet-loader";
+// optionally import a transform function
+import { camelCase, snake_case } from "astro-sheet-loader";
 
 const crm = defineCollection({
   loader: sheetLoader({
@@ -106,7 +108,7 @@ The `sheetLoader` function takes an options object with the following properties
 - `range` (optional, default: select all): Range of cells to delimit the table
 - `query` (optional, default: select all): SQL-like query to filter results in the provided range, using the original column names. [Query documentation](https://developers.google.com/chart/interactive/docs/querylanguage)
 - `allowBlanks` (optional, default: all fields are mandatory): Allow for blank cells in your table
-- `transformHeader` (optional, default: `false`): Pass a function like `camelCase` or `snake_case` to transform column names
+- `transformHeader` (optional, default: `false`): Pass a function like `camelCase` or `snake_case` or a custom defined one to transform column names
 
 ## Caveat
 

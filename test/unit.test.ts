@@ -5,7 +5,7 @@ import {
   sheetSchemaToZodSchema,
   camelCase,
   snake_case,
-} from "../loader/sheet-loader.js";
+} from "../packages/astro-sheet-loader/sheet-loader.js";
 
 const document1 = "1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgvE2upms";
 
