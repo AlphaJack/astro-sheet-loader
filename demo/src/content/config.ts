@@ -1,5 +1,5 @@
 import { defineCollection, z } from "astro:content";
-import { sheetLoader, camelCase, snake_case } from "../../../packages/astro-sheet-loader/index.ts";
+import { sheetLoader, camelCase, snake_case } from "astro-sheet-loader";
 
 const crm = defineCollection({
   loader: sheetLoader({
