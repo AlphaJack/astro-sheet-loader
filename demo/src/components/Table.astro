@@ -1,22 +1,22 @@
 ---
 import {
-  type CollectionKey,
-  type CollectionEntry,
-  getCollection,
+	type CollectionKey,
+	type CollectionEntry,
+	getCollection,
 } from "astro:content";
 
 interface Props {
-  collection: CollectionKey;
+	collection: CollectionKey;
 }
 
 const { collection } = Astro.props as Props;
 let entries: CollectionEntry<any>[] = [];
 
 try {
-  entries = await getCollection(collection);
+	entries = await getCollection(collection);
 } catch (error) {
-  console.error(`Collection ${collection} does not exist.`);
-  return;
+	console.error(`Collection ${collection} does not exist.`);
+	return;
 }
 
 //console.log(rows[5].data); // {}
