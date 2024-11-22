@@ -1,6 +1,6 @@
 {
 	"name": "astro-sheet-loader",
-	"version": "1.0.5",
+	"version": "1.0.4",
 	"description": "This package provides a Google Sheets loader for Astro. It allows you to load and parse publicly viewable Sheets, and use the data in your Astro site.",
 	"author": "AlphaJack",
 	"license": "MIT",
