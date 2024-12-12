@@ -10,7 +10,7 @@
 		"astro": "astro"
 	},
 	"dependencies": {
-		"astro": "^4.14.0",
+		"astro": "^5.0.0",
 		"typescript": "^5.6.3"
 	}
 }
