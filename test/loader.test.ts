@@ -113,6 +113,29 @@ describe("sheetLoader", () => {
 		).rejects.toThrow("duplicate");
 	});
 
+	it("should reject an idColumn that is allowed to be blank", async () => {
+		stubFetch(gvizResponse(cols, rows));
+		const { context } = mockContext();
+		await expect(
+			sheetLoader({
+				document: "test",
+				idColumn: "Name",
+				allowBlanks: ["Name"],
+			}).load(context),
+		).rejects.toThrow("cannot be allowed to be blank");
+	});
+
+	it("should generate a schema with blanks allowed in specific columns", async () => {
+		stubFetch(gvizResponse(cols, rows));
+		const loader = sheetLoader({
+			document: "test",
+			allowBlanks: ["Age"],
+		}) as SchemaLoader;
+		const result = await loader.createSchema();
+		expect(result.types).toContain('"Name": string;');
+		expect(result.types).toContain('"Age"?: number | null;');
+	});
+
 	it("should reject blank idColumn values", async () => {
 		stubFetch(gvizResponse(cols, [{ c: [{ v: null }, { v: 1 }] }]));
 		const { context } = mockContext();

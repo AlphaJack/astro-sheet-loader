@@ -120,7 +120,7 @@ function toError(error: unknown): Error {
 }
 
 /**
- * Transform headers to camelCase.
+ * Transforms headers to camelCase
  */
 export const camelCase = (text: string | number): string => {
 	return `${text}`
@@ -132,7 +132,7 @@ export const camelCase = (text: string | number): string => {
 };
 
 /**
- * Transform headers to snake_case.
+ * Transforms headers to snake_case
  */
 export const snake_case = (text: string | number): string => {
 	return (
@@ -152,7 +152,7 @@ export const snake_case = (text: string | number): string => {
 // ################################ Schema
 
 /**
- * Associates a Sheet type to the equivalent Zod type.
+ * Associates a Sheet type to the equivalent Zod type
  */
 const SHEET_ZOD_TYPE_MAP = new Map<string, ZodType>([
 	["boolean", z.boolean()],
@@ -164,7 +164,27 @@ const SHEET_ZOD_TYPE_MAP = new Map<string, ZodType>([
 ]);
 
 /**
- * Converts the Sheet schema to a Zod schema.
+ * Returns a predicate telling whether a column may be blank, validating the `allowBlanks` list
+ */
+function blankAllowedPredicate(
+	allowBlanks: boolean | string[],
+	columnNames: string[],
+): (columnName: string) => boolean {
+	if (Array.isArray(allowBlanks)) {
+		const unknown = allowBlanks.filter((name) => !columnNames.includes(name));
+		if (unknown.length > 0) {
+			throw new AstroError(
+				`Columns allowed to be blank not found: | ${unknown.join(" | ")} |, available columns: | ${columnNames.join(" | ")} |`,
+			);
+		}
+		const allowed = new Set(allowBlanks);
+		return (columnName) => allowed.has(columnName);
+	}
+	return () => allowBlanks;
+}
+
+/**
+ * Converts the Sheet schema to a Zod schema
  */
 export function sheetSchemaToZodSchema({
 	cols,
@@ -172,13 +192,17 @@ export function sheetSchemaToZodSchema({
 	allowBlanks = false,
 }: sheetSchemaToZodSchemaOptions): z.ZodObject<ZodRawShape> {
 	const schemaObject: Record<string, ZodType> = {};
+	const isBlankAllowed = blankAllowedPredicate(
+		allowBlanks,
+		getColumnNames({ cols, transformHeader }),
+	);
 
 	for (const column of cols) {
 		const zodType = SHEET_ZOD_TYPE_MAP.get(column.type) ?? z.string();
 		const columnName = transformHeader
 			? transformHeader(column.label)
 			: `${column.label}`;
-		schemaObject[columnName] = allowBlanks
+		schemaObject[columnName] = isBlankAllowed(columnName)
 			? zodType.nullable().optional()
 			: zodType;
 	}
@@ -187,7 +211,7 @@ export function sheetSchemaToZodSchema({
 }
 
 /**
- * Associates a Sheet type to the equivalent TypeScript type.
+ * Associates a Sheet type to the equivalent TypeScript type
  */
 const SHEET_TS_TYPE_MAP = new Map<string, string>([
 	["boolean", "boolean"],
@@ -199,7 +223,7 @@ const SHEET_TS_TYPE_MAP = new Map<string, string>([
 ]);
 
 /**
- * Converts the Sheet schema to TypeScript declarations, as required by `createSchema()`.
+ * Converts the Sheet schema to TypeScript declarations, as required by `createSchema()`
  */
 export function sheetSchemaToTypes({
 	cols,
@@ -207,6 +231,10 @@ export function sheetSchemaToTypes({
 	allowBlanks = false,
 }: sheetSchemaToZodSchemaOptions): string {
 	const fields: string[] = [];
+	const isBlankAllowed = blankAllowedPredicate(
+		allowBlanks,
+		getColumnNames({ cols, transformHeader }),
+	);
 
 	for (const column of cols) {
 		const tsType = SHEET_TS_TYPE_MAP.get(column.type) ?? "string";
@@ -214,7 +242,7 @@ export function sheetSchemaToTypes({
 			? transformHeader(column.label)
 			: `${column.label}`;
 		fields.push(
-			allowBlanks
+			isBlankAllowed(columnName)
 				? `\t${JSON.stringify(columnName)}?: ${tsType} | null;`
 				: `\t${JSON.stringify(columnName)}: ${tsType};`,
 		);
@@ -237,7 +265,7 @@ function getColumnNames({
 }
 
 /**
- * Process header from json data
+ * Processes the header from JSON data, erroring if all column names are blank
  */
 function processHeader({
 	cols,
@@ -312,7 +340,8 @@ function rowsToEntries({
 }
 
 /**
- * Process rows from json data
+ * Processes rows from JSON data, storing them as entries and removing
+ * entries whose rows are no longer in the sheet
  */
 async function processContent({
 	rows,
@@ -355,7 +384,7 @@ async function processContent({
 }
 
 /**
- * Returns the value or formatted string of a cell based on its content.
+ * Returns the value or formatted string of a cell based on its content
  */
 function valueOrFormat(c: Cell | null): string | number | boolean | undefined {
 	// example ISO date: {v: 45402, f: "2024-04-20"}
@@ -384,12 +413,38 @@ function valueOrFormat(c: Cell | null): string | number | boolean | undefined {
 // ################################ Main
 
 /**
- * Loads data from a Google Sheets document into Astro
+ * Loads data from a publicly viewable Google Sheets document into Astro at build time.
+ *
+ * Entries are validated against the schema defined on the collection, or against
+ * a schema derived from the sheet columns if none is provided.
+ *
+ * @example
+ * ```typescript
+ * // src/content.config.ts
+ * const crm = defineCollection({
+ *   loader: sheetLoader({
+ *     document: "1XXXXXXXXXXXX",
+ *     transformHeader: camelCase,
+ *     idColumn: "id",
+ *   }),
+ * });
+ * ```
  */
 export function sheetLoader(options: SheetLoaderOptions): Loader {
 	const { transformHeader = false, allowBlanks = false, idColumn } = options;
 	const url = buildSheetUrl(options);
 	let cachedJson: JSONData | null = null;
+	const checkOptions = () => {
+		if (
+			idColumn &&
+			Array.isArray(allowBlanks) &&
+			allowBlanks.includes(idColumn)
+		) {
+			throw new AstroError(
+				`ID column '${idColumn}' cannot be allowed to be blank.`,
+			);
+		}
+	};
 	return {
 		name: "sheet-loader",
 		load: async ({
@@ -399,6 +454,7 @@ export function sheetLoader(options: SheetLoaderOptions): Loader {
 			store,
 			collection,
 		}: LoaderContext) => {
+			checkOptions();
 			// always fetch fresh data, so that reloads in dev mode pick up sheet changes
 			cachedJson = await sheetToJSON({ url });
 			const json = cachedJson;
@@ -424,6 +480,7 @@ export function sheetLoader(options: SheetLoaderOptions): Loader {
 			});
 		},
 		createSchema: async () => {
+			checkOptions();
 			// reuse the data fetched by load() when available
 			if (!cachedJson) {
 				cachedJson = await sheetToJSON({ url });
@@ -446,7 +503,22 @@ export function sheetLoader(options: SheetLoaderOptions): Loader {
 }
 
 /**
- * Loads data from a Google Sheets document at request time, for live collections
+ * Loads data from a publicly viewable Google Sheets document at request time,
+ * for live collections. Requires an on-demand rendering adapter.
+ *
+ * Errors are returned as values instead of being thrown, and entries are not
+ * validated against a schema, so `allowBlanks` is ignored.
+ *
+ * @example
+ * ```typescript
+ * // src/live.config.ts
+ * const crm = defineLiveCollection({
+ *   loader: sheetLiveLoader({
+ *     document: "1XXXXXXXXXXXX",
+ *     idColumn: "Name",
+ *   }),
+ * });
+ * ```
  */
 export function sheetLiveLoader(
 	options: SheetLoaderOptions,

@@ -72,6 +72,21 @@ describe("Schema", () => {
 		expect(generatedSchema.shape.Age.isOptional()).toBeFalsy();
 	});
 
+	it("should generate a zod schema with blanks allowed in specific columns", () => {
+		const generatedSchema = sheetSchemaToZodSchema({
+			cols: jsonCols1,
+			allowBlanks: ["Name"],
+		});
+		expect(generatedSchema.shape.Name.isOptional()).toBe(true);
+		expect(generatedSchema.shape.Age.isOptional()).toBe(false);
+	});
+
+	it("should reject unknown columns in allowBlanks", () => {
+		expect(() =>
+			sheetSchemaToZodSchema({ cols: jsonCols1, allowBlanks: ["Typo"] }),
+		).toThrow("not found");
+	});
+
 	it("should generate a zod schema with camel case entries", () => {
 		const generatedSchema = sheetSchemaToZodSchema({
 			cols: jsonCols1,
@@ -97,6 +112,15 @@ describe("Schema", () => {
 		const types = sheetSchemaToTypes({ cols: jsonCols1 });
 		expect(types).toContain('"ID": number;');
 		expect(types).toContain('"Last Hug Received": string;');
+	});
+
+	it("should generate TypeScript types with blanks allowed in specific columns", () => {
+		const types = sheetSchemaToTypes({
+			cols: jsonCols1,
+			allowBlanks: ["Name"],
+		});
+		expect(types).toContain('"Name"?: string | null;');
+		expect(types).toContain('"Age": number;');
 	});
 });
 
