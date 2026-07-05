@@ -70,6 +70,8 @@ export interface ProcessHeaderOptions {
 export interface ProcessContentOptions {
 	rows: Row[];
 	columns: string[];
+	/** Column whose values are used as entry IDs */
+	idColumn?: string;
 	collection: LoaderContext["collection"];
 	logger: LoaderContext["logger"];
 	store: LoaderContext["store"];
@@ -97,4 +99,6 @@ export interface SheetLoaderOptions {
 	transformHeader?: transformHeaderType;
 	/** Don't fail validation if some entries miss some values */
 	allowBlanks?: boolean;
+	/** Use the values of this column (named after `transformHeader` is applied) as entry IDs, instead of positional `row_N` IDs. Values must be unique and non-empty */
+	idColumn?: string;
 }

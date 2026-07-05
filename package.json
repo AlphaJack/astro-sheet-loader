@@ -9,7 +9,8 @@
 		"build:demo": "npm run build --workspace=demo",
 		"build:packages": "npm run build --workspace=packages",
 		"build": "npm run build:packages && npm run build:demo",
-		"test": "npm run build && vitest",
+		"test": "npm run build:packages && vitest run",
+		"test:online": "npm run build && TEST_ONLINE=1 vitest run",
 		"preview": "npm run preview --workspace=demo",
 		"pack": "npm run build:packages && npm pack --workspace=packages"
 	},

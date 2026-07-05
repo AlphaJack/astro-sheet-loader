@@ -98,6 +98,37 @@ The `sheetLoader` function takes an options object with the following properties
 - `query` (optional, default: select all): SQL-like query to filter results in the provided range, using the original column names. [Query documentation](https://developers.google.com/chart/interactive/docs/querylanguage)
 - `allowBlanks` (optional, default: all fields are mandatory): Allow for blank cells in your table
 - `transformHeader` (optional, default: `false`): Pass a function like `camelCase` or `snake_case` or a custom defined one to transform column names
+- `idColumn` (optional, default: positional `row_N` IDs): Use the values of this column as entry IDs, so that they stay stable when rows are inserted or deleted. The name must match the column after `transformHeader` is applied, and its values must be unique and non-empty
+
+## Live collections
+
+For SSR sites, the `sheetLiveLoader` function fetches the Sheet at request time instead of build time. It takes the same options as `sheetLoader`, except for `allowBlanks`, as live collections do not validate entries against a generated schema:
+
+```typescript
+// src/live.config.ts
+import { defineLiveCollection } from "astro:content";
+import { sheetLiveLoader } from "astro-sheet-loader";
+
+const crm = defineLiveCollection({
+  loader: sheetLiveLoader({
+    document: "1wb2TbwRE-McOA663PGgf0InTsXC6b07ThEy_j6_MCDw",
+    idColumn: "Name",
+  }),
+});
+
+export const collections = { crm };
+```
+
+```astro
+---
+import { getLiveCollection, getLiveEntry } from "astro:content";
+
+const { entries } = await getLiveCollection("crm");
+const { entry } = await getLiveEntry("crm", "Alice");
+---
+```
+
+Live collections require an [on-demand rendering adapter](https://docs.astro.build/en/guides/on-demand-rendering/).
 
 ## Caveat
 
@@ -130,6 +161,11 @@ Despite doing everything correctly, the Sheets API may return inaccurate data:
 - unnecessary, completely blank columns [Example](https://docs.google.com/spreadsheets/d/1h-oqlqJ_G3UXuDSkdFHuEaCVuOXQOb68y2sduXQRTn4/gviz/tq?tqx=out:html)
 
 If you have an idea on how to tackle these cases, feel free to submit a PR!
+
+## Development
+
+- `npm test` builds the package and runs the offline test suite against recorded fixtures
+- `npm run test:online` also builds the demo and runs the tests hitting the live Google Sheets API
 
 ## Special Thanks
 
