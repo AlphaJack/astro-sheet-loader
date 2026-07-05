@@ -1,4 +1,5 @@
-import { defineCollection, z } from "astro:content";
+import { defineCollection } from "astro:content";
+import { z } from "astro/zod";
 import { sheetLoader, camelCase, snake_case } from "astro-sheet-loader";
 
 const crm = defineCollection({
@@ -100,9 +101,9 @@ const badResponse = defineCollection({
 	}),
 	schema: z.object({
 		customer_id: z.string(),
-		email: z.string().email(),
-		last_ip_address: z.string().ip(),
-		last_login_timestamp: z.string().datetime().optional(),
+		email: z.email(),
+		last_ip_address: z.union([z.ipv4(), z.ipv6()]),
+		last_login_timestamp: z.iso.datetime().optional(),
 	}),
 });
 
