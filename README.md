@@ -96,7 +96,7 @@ The `sheetLoader` function takes an options object with the following properties
 - `sheet` (optional, default: first sheet): The name of the sheet, found at the bottom of the page
 - `range` (optional, default: select all): Range of cells to delimit the table
 - `query` (optional, default: select all): SQL-like query to filter results in the provided range, using the original column names. [Query documentation](https://developers.google.com/chart/interactive/docs/querylanguage)
-- `allowBlanks` (optional, default: all fields are mandatory): Allow for blank cells in your table
+- `allowBlanks` (optional, default: all fields are mandatory): Allow for blank cells, either in the whole table (`true`) or in specific columns (e.g. `["notes", "mobile"]`, named after `transformHeader` is applied)
 - `transformHeader` (optional, default: `false`): Pass a function like `camelCase` or `snake_case` or a custom defined one to transform column names
 - `idColumn` (optional, default: positional `row_N` IDs): Use the values of this column as entry IDs, so that they stay stable when rows are inserted or deleted. The name must match the column after `transformHeader` is applied, and its values must be unique and non-empty
 

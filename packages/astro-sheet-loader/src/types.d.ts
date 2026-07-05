@@ -52,10 +52,10 @@ export interface JSONData {
 export interface sheetSchemaToZodSchemaOptions {
 	/** List of columns from Sheet API */
 	cols: Column[];
-	/** Apply a tranformation function to the header row */
+	/** Apply a transformation function to the header row */
 	transformHeader?: transformHeaderType;
-	/** If columns may have null values */
-	allowBlanks?: boolean;
+	/** If columns may have null values: `true` for all of them, or a list of column names */
+	allowBlanks?: boolean | string[];
 }
 
 // ################################ Loader
@@ -95,10 +95,10 @@ export interface SheetLoaderOptions {
 	range?: string;
 	/** Query to apply */
 	query?: string;
-	/** Apply a tranformation function to the header row, like 'camelCase' or 'snake_case' */
+	/** Apply a transformation function to the header row, like `camelCase` or `snake_case` */
 	transformHeader?: transformHeaderType;
-	/** Don't fail validation if some entries miss some values */
-	allowBlanks?: boolean;
+	/** Don't fail validation if some entries miss some values: `true` for the whole table, or a list of column names (named after `transformHeader` is applied) that may be blank */
+	allowBlanks?: boolean | string[];
 	/** Use the values of this column (named after `transformHeader` is applied) as entry IDs, instead of positional `row_N` IDs. Values must be unique and non-empty */
 	idColumn?: string;
 }
