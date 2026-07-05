@@ -28,12 +28,12 @@ npm install astro-sheet-loader
 
 ## Usage
 
-This package requires Astro 5.
+This package requires Astro 6 or later.
 
 You can then use the feed loader in your content configuration:
 
 ```typescript
-// src/content/config.ts
+// src/content.config.ts
 import { defineCollection } from "astro:content";
 import { sheetLoader } from "astro-sheet-loader";
 // optionally import a transform function

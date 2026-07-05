@@ -51,7 +51,6 @@ async function fetchJSON(url: string): Promise<Response> {
  * Parses the JSON response from Google Sheets
  */
 async function parseJSON(text: string, url?: string): Promise<JSONData> {
-	//const document = url?.split("/")[5];
 	if (text.startsWith("<!DOCTYPE html>")) {
 		throw new AstroError(
 			`Error fetching JSON data for '${url}', check the ID and share settings of the document.`,
@@ -134,11 +133,45 @@ export async function sheetSchemaToZodSchema({
 		schemaObject[columnName] = allowBlanks
 			? zodType.nullable().optional()
 			: zodType;
-		// debug
-		//console.log(`${columnName}: ${column.type}`);
 	}
 	const zodSchema = z.object(schemaObject);
 	return zodSchema;
+}
+
+/**
+ * Associates a Sheet type to the equivalent TypeScript type.
+ */
+const SHEET_TS_TYPE_MAP = new Map<string, string>([
+	["boolean", "boolean"],
+	["number", "number"],
+	["string", "string"],
+	// google is not returning ISO 8601 UTC dates, so we treat them as strings
+	["date", "string"],
+	["datetime", "string"],
+]);
+
+/**
+ * Converts the Sheet schema to TypeScript declarations, as required by `createSchema()`.
+ */
+export function sheetSchemaToTypes({
+	cols,
+	transformHeader = false,
+	allowBlanks = false,
+}: sheetSchemaToZodSchemaOptions): string {
+	const fields: string[] = [];
+
+	for (const column of cols) {
+		const tsType = SHEET_TS_TYPE_MAP.get(column.type) ?? "string";
+		const columnName = transformHeader
+			? transformHeader(column.label)
+			: `${column.label}`;
+		fields.push(
+			allowBlanks
+				? `\t${JSON.stringify(columnName)}?: ${tsType} | null;`
+				: `\t${JSON.stringify(columnName)}: ${tsType};`,
+		);
+	}
+	return `export type Entry = {\n${fields.join("\n")}\n};\n`;
 }
 
 // ################################ Loader
@@ -263,7 +296,6 @@ export function sheetLoader({
 	const queryParam = query ? `&tq=${encodeURIComponent(query)}` : "";
 	const url = `https://docs.google.com/spreadsheets/d/${document}/gviz/tq?tqx=out:json${sheetParam}${rangeParam}${queryParam}`;
 	let cachedJson: JSONData | null = null;
-	let autoSchema = false;
 	return {
 		name: "sheet-loader",
 		load: async ({
@@ -297,18 +329,23 @@ export function sheetLoader({
 				parseData,
 			});
 		},
-		schema: async () => {
+		createSchema: async () => {
 			if (!cachedJson) {
 				cachedJson = await sheetToJSON({ url });
 			}
-			const json: JSONData = cachedJson as JSONData;
-			autoSchema = true;
-			//console.log(json.table.cols);
-			return sheetSchemaToZodSchema({
-				cols: json.table.cols,
-				transformHeader,
-				allowBlanks,
-			});
+			const json: JSONData = cachedJson;
+			return {
+				schema: await sheetSchemaToZodSchema({
+					cols: json.table.cols,
+					transformHeader,
+					allowBlanks,
+				}),
+				types: sheetSchemaToTypes({
+					cols: json.table.cols,
+					transformHeader,
+					allowBlanks,
+				}),
+			};
 		},
 	};
 }
