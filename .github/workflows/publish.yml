@@ -11,8 +11,8 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v6
         with:
           node-version: 22
       - run: npm install
@@ -23,15 +23,14 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
-      # allows npm to generate provenance attestations
+      # allows npm to authenticate via OIDC trusted publishing and generate provenance
       id-token: write
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v6
         with:
           node-version: 22
-          registry-url: https://registry.npmjs.org/
+      # trusted publishing requires npm >= 11.5.1, newer than the one bundled with Node 22
+      - run: npm install -g npm@latest
       - run: npm install
       - run: npm publish --workspace=packages
-        env:
-          NODE_AUTH_TOKEN: ${{secrets.NPM_TOKEN}}
