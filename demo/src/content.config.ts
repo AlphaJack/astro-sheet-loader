@@ -7,6 +7,7 @@ const crm = defineCollection({
 		document: "1wb2TbwRE-McOA663PGgf0InTsXC6b07ThEy_j6_MCDw",
 		allowBlanks: true,
 		transformHeader: camelCase,
+		idColumn: "id",
 	}),
 });
 

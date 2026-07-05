@@ -14,13 +14,14 @@
 // ################################################################ Imports
 
 import { AstroError } from "astro/errors";
-import type { Loader, LoaderContext } from "astro/loaders";
-import { type ZodRawShape, type ZodTypeAny, z } from "astro/zod";
+import type { LiveLoader, Loader, LoaderContext } from "astro/loaders";
+import { type ZodRawShape, type ZodType, z } from "astro/zod";
 import type {
 	Cell,
 	JSONData,
 	ProcessContentOptions,
 	ProcessHeaderOptions,
+	Row,
 	SheetLoaderOptions,
 	sheetSchemaToZodSchemaOptions,
 } from "./types.js";
@@ -28,6 +29,37 @@ import type {
 // ################################################################ Functions
 
 // ################################ General
+
+/**
+ * Builds the Google Sheets query URL from the loader options
+ */
+function buildSheetUrl(
+	{
+		document,
+		gid = 0,
+		sheet = undefined,
+		range = undefined,
+		query = undefined,
+	}: SheetLoaderOptions,
+	tqx = "out:json",
+): string {
+	const url = new URL(
+		`https://docs.google.com/spreadsheets/d/${document}/gviz/tq`,
+	);
+	url.searchParams.set("tqx", tqx);
+	if (sheet) {
+		url.searchParams.set("sheet", sheet);
+	} else {
+		url.searchParams.set("gid", `${gid}`);
+	}
+	if (range) {
+		url.searchParams.set("range", range);
+	}
+	if (query) {
+		url.searchParams.set("tq", query);
+	}
+	return url.toString();
+}
 
 /**
  * Fetches JSON data from a Google Sheets document
@@ -51,13 +83,22 @@ async function fetchJSON(url: string): Promise<Response> {
  * Parses the JSON response from Google Sheets
  */
 async function parseJSON(text: string, url?: string): Promise<JSONData> {
-	if (text.startsWith("<!DOCTYPE html>")) {
+	if (/^\s*</.test(text)) {
 		throw new AstroError(
 			`Error fetching JSON data for '${url}', check the ID and share settings of the document.`,
 		);
 	}
+	// responses look like "/*O_o*/\ngoogle.visualization.Query.setResponse({...});"
+	const match = text.match(
+		/google\.visualization\.Query\.setResponse\(([\s\S]*)\);?\s*$/,
+	);
+	const jsonString = match?.[1];
+	if (jsonString === undefined) {
+		throw new AstroError(
+			`Unexpected Google Visualization response format for '${url}'.`,
+		);
+	}
 	let jsonObject: JSONData;
-	const jsonString = text.slice(47, -2);
 	try {
 		jsonObject = JSON.parse(jsonString);
 	} catch (error) {
@@ -69,6 +110,13 @@ async function parseJSON(text: string, url?: string): Promise<JSONData> {
 		);
 	}
 	return jsonObject;
+}
+
+/**
+ * Normalizes a thrown value to an Error, as live loaders return errors instead of throwing
+ */
+function toError(error: unknown): Error {
+	return error instanceof Error ? error : new Error(`${error}`);
 }
 
 /**
@@ -106,7 +154,7 @@ export const snake_case = (text: string | number): string => {
 /**
  * Associates a Sheet type to the equivalent Zod type.
  */
-const SHEET_ZOD_TYPE_MAP = new Map<string, ZodTypeAny>([
+const SHEET_ZOD_TYPE_MAP = new Map<string, ZodType>([
 	["boolean", z.boolean()],
 	["number", z.number()],
 	["string", z.string()],
@@ -118,12 +166,12 @@ const SHEET_ZOD_TYPE_MAP = new Map<string, ZodTypeAny>([
 /**
  * Converts the Sheet schema to a Zod schema.
  */
-export async function sheetSchemaToZodSchema({
+export function sheetSchemaToZodSchema({
 	cols,
 	transformHeader = false,
 	allowBlanks = false,
-}: sheetSchemaToZodSchemaOptions): Promise<z.ZodObject<ZodRawShape>> {
-	const schemaObject: Record<string, z.ZodTypeAny> = {};
+}: sheetSchemaToZodSchemaOptions): z.ZodObject<ZodRawShape> {
+	const schemaObject: Record<string, ZodType> = {};
 
 	for (const column of cols) {
 		const zodType = SHEET_ZOD_TYPE_MAP.get(column.type) ?? z.string();
@@ -177,6 +225,18 @@ export function sheetSchemaToTypes({
 // ################################ Loader
 
 /**
+ * Computes the column names from the header row
+ */
+function getColumnNames({
+	cols,
+	transformHeader,
+}: Pick<ProcessHeaderOptions, "cols" | "transformHeader">): string[] {
+	return cols.map((column) =>
+		transformHeader ? transformHeader(column.label) : `${column.label}`,
+	);
+}
+
+/**
  * Process header from json data
  */
 function processHeader({
@@ -186,13 +246,7 @@ function processHeader({
 	logger,
 }: ProcessHeaderOptions): string[] {
 	// get header row to set column names
-	const columns: string[] = [];
-	for (const column of cols) {
-		const columnName = transformHeader
-			? transformHeader(column.label)
-			: `${column.label}`;
-		columns.push(columnName);
-	}
+	const columns = getColumnNames({ cols, transformHeader });
 
 	if (columns.every((column) => column.trim() === "")) {
 		logger.error(
@@ -205,11 +259,65 @@ function processHeader({
 }
 
 /**
+ * Maps the cells of a row to their column names
+ */
+function rowToData(row: Row, columns: string[]): Record<string, unknown> {
+	const rowData: Record<string, unknown> = {};
+	row.c.forEach((cell, index) => {
+		const columnName = columns[index];
+		if (!columnName) return;
+		rowData[columnName] = valueOrFormat(cell);
+	});
+	return rowData;
+}
+
+/**
+ * Converts content rows to entries, each with a unique ID
+ */
+function rowsToEntries({
+	rows,
+	columns,
+	idColumn,
+}: {
+	rows: Row[];
+	columns: string[];
+	idColumn?: string;
+}): { id: string; data: Record<string, unknown> }[] {
+	if (idColumn && !columns.includes(idColumn)) {
+		throw new AstroError(
+			`ID column '${idColumn}' not found among these columns: | ${columns.join(" | ")} |`,
+		);
+	}
+	const seenIds = new Set<string>();
+	return rows.map((row, rowIndex) => {
+		const data = rowToData(row, columns);
+		let id = `row_${rowIndex}`;
+		if (idColumn) {
+			const value = data[idColumn];
+			if (value === undefined || value === null || `${value}`.trim() === "") {
+				throw new AstroError(
+					`Row ${rowIndex} has no value for ID column '${idColumn}'.`,
+				);
+			}
+			id = `${value}`;
+			if (seenIds.has(id)) {
+				throw new AstroError(
+					`Row ${rowIndex} has a duplicate value '${id}' for ID column '${idColumn}'.`,
+				);
+			}
+			seenIds.add(id);
+		}
+		return { id, data };
+	});
+}
+
+/**
  * Process rows from json data
  */
 async function processContent({
 	rows,
 	columns,
+	idColumn,
 	collection,
 	logger,
 	store,
@@ -219,35 +327,31 @@ async function processContent({
 	// parse content rows
 	if (rows.length === 0) {
 		logger.warn(`${collection}: No entry was loaded.`);
-	} else {
-		let rowID = 0;
-		for (const row of rows) {
-			logger.debug(`${collection}: Processing row ${rowID}`);
-			const id = `row_${rowID}`;
-			const rowData: Record<string, unknown> = {};
-			row.c.forEach((c, index) => {
-				const columnName = columns[index];
-				if (!columnName) return;
-				rowData[columnName] = valueOrFormat(c);
-			});
-			const parsedData = await parseData({ id, data: rowData }).catch(
-				(error) => {
-					logger.error(
-						`${collection}: Error validating row ${rowID} (${JSON.stringify(row)}): ${error.message}`,
-					);
-					throw new AstroError("Error validating row data.");
-				},
-			);
-			const digest = generateDigest(parsedData);
-			logger.debug(`        Source data: ${rowData}`);
-			logger.debug(`        Parsed data: ${parsedData}`);
-			store.set({ id, data: parsedData, digest });
-			rowID++;
-		}
-		logger.info(
-			`${collection}: Loaded ${rows.length} entries with these ${columns.length} fields: | ${columns.join(" | ")} |`,
-		);
+		store.clear();
+		return;
 	}
+	const entries = rowsToEntries({ rows, columns, idColumn });
+	for (const { id, data } of entries) {
+		logger.debug(`${collection}: Processing entry ${id}`);
+		const parsedData = await parseData({ id, data }).catch((error) => {
+			logger.error(
+				`${collection}: Error validating entry ${id} (${JSON.stringify(data)}): ${error.message}`,
+			);
+			throw new AstroError("Error validating row data.");
+		});
+		const digest = generateDigest(parsedData);
+		store.set({ id, data: parsedData, digest });
+	}
+	// remove entries whose rows are no longer in the sheet
+	const currentIds = new Set(entries.map((entry) => entry.id));
+	for (const id of store.keys()) {
+		if (!currentIds.has(id)) {
+			store.delete(id);
+		}
+	}
+	logger.info(
+		`${collection}: Loaded ${rows.length} entries with these ${columns.length} fields: | ${columns.join(" | ")} |`,
+	);
 }
 
 /**
@@ -282,19 +386,9 @@ function valueOrFormat(c: Cell | null): string | number | boolean | undefined {
 /**
  * Loads data from a Google Sheets document into Astro
  */
-export function sheetLoader({
-	document,
-	gid = 0,
-	sheet = undefined,
-	range = undefined,
-	query = undefined,
-	transformHeader = false,
-	allowBlanks = false,
-}: SheetLoaderOptions): Loader {
-	const sheetParam = `&${sheet ? `sheet=${sheet}` : `gid=${gid}`}`;
-	const rangeParam = range ? `&range=${range}` : "";
-	const queryParam = query ? `&tq=${encodeURIComponent(query)}` : "";
-	const url = `https://docs.google.com/spreadsheets/d/${document}/gviz/tq?tqx=out:json${sheetParam}${rangeParam}${queryParam}`;
+export function sheetLoader(options: SheetLoaderOptions): Loader {
+	const { transformHeader = false, allowBlanks = false, idColumn } = options;
+	const url = buildSheetUrl(options);
 	let cachedJson: JSONData | null = null;
 	return {
 		name: "sheet-loader",
@@ -305,12 +399,11 @@ export function sheetLoader({
 			store,
 			collection,
 		}: LoaderContext) => {
-			if (!cachedJson) {
-				cachedJson = await sheetToJSON({ url });
-			}
+			// always fetch fresh data, so that reloads in dev mode pick up sheet changes
+			cachedJson = await sheetToJSON({ url });
 			const json = cachedJson;
 			logger.info(
-				`${collection}: Loading ${url.replace(/tqx=out:json/, "tqx=out:html")}`,
+				`${collection}: Loading ${buildSheetUrl(options, "out:html")}`,
 			);
 
 			const columns = processHeader({
@@ -322,6 +415,7 @@ export function sheetLoader({
 			return processContent({
 				rows: json.table.rows,
 				columns,
+				idColumn,
 				collection,
 				logger,
 				store,
@@ -330,12 +424,13 @@ export function sheetLoader({
 			});
 		},
 		createSchema: async () => {
+			// reuse the data fetched by load() when available
 			if (!cachedJson) {
 				cachedJson = await sheetToJSON({ url });
 			}
 			const json: JSONData = cachedJson;
 			return {
-				schema: await sheetSchemaToZodSchema({
+				schema: sheetSchemaToZodSchema({
 					cols: json.table.cols,
 					transformHeader,
 					allowBlanks,
@@ -346,6 +441,44 @@ export function sheetLoader({
 					allowBlanks,
 				}),
 			};
+		},
+	};
+}
+
+/**
+ * Loads data from a Google Sheets document at request time, for live collections
+ */
+export function sheetLiveLoader(
+	options: SheetLoaderOptions,
+): LiveLoader<Record<string, unknown>, { id: string }> {
+	const { transformHeader = false, idColumn } = options;
+	const url = buildSheetUrl(options);
+
+	const loadEntries = async () => {
+		const json = await sheetToJSON({ url });
+		const columns = getColumnNames({ cols: json.table.cols, transformHeader });
+		if (columns.every((column) => column.trim() === "")) {
+			throw new AstroError("Error retrieving column names.");
+		}
+		return rowsToEntries({ rows: json.table.rows, columns, idColumn });
+	};
+
+	return {
+		name: "sheet-live-loader",
+		loadCollection: async () => {
+			try {
+				return { entries: await loadEntries() };
+			} catch (error) {
+				return { error: toError(error) };
+			}
+		},
+		loadEntry: async ({ filter }) => {
+			try {
+				const entries = await loadEntries();
+				return entries.find((entry) => entry.id === filter.id);
+			} catch (error) {
+				return { error: toError(error) };
+			}
 		},
 	};
 }

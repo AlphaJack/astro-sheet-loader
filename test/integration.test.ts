@@ -1,6 +1,7 @@
 /*
 
-Need to run `astro build` before running this test
+Needs `astro build` output for the demo, so it is skipped unless TEST_ONLINE is set.
+Run it with `npm run test:online`.
 
 */
 
@@ -9,12 +10,11 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 
-describe("Astro (Online)", () => {
+describe.runIf(process.env.TEST_ONLINE)("Astro (Online)", () => {
 	it("should retrieve and display data from different Sheets", () => {
 		// Define the file path
 		const __filename = fileURLToPath(import.meta.url);
 		const __dirname = path.dirname(__filename);
-		console.log(__dirname);
 		const filePath = path.join(__dirname, "../demo/dist/index.html");
 		const content = fs.readFileSync(filePath, "utf-8");
 		// checks
