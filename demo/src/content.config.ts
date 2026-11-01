@@ -114,12 +114,15 @@ export const collections = {
   toContact,
   sheetName,
   shiftedHours,
-  // beware of errors:
-  //badDocument,
-  //badQuery,
-  //badRange,
-  //badColumns,
-  //badMandatory,
-  //badData,
-  //badResponse
+};
+
+// examples of failing collections: add them to `collections` to see the errors
+export const failingCollections = {
+  badDocument,
+  badQuery,
+  badRange,
+  badColumns,
+  badMandatory,
+  badData,
+  badResponse,
 };

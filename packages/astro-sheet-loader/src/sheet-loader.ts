@@ -457,7 +457,8 @@ export function sheetLoader(options: SheetLoaderOptions): Loader {
   };
   return {
     name: "sheet-loader",
-    load: async ({ logger, parseData, generateDigest, store, collection }: LoaderContext) => {
+    load: async (context: LoaderContext) => {
+      const { logger, store, collection } = context;
       checkOptions();
       // always fetch fresh data, so that reloads in dev mode pick up sheet changes
       cachedJson = await sheetToJSON({ url });
@@ -480,8 +481,8 @@ export function sheetLoader(options: SheetLoaderOptions): Loader {
         collection,
         logger,
         store,
-        generateDigest,
-        parseData,
+        generateDigest: (data) => context.generateDigest(data),
+        parseData: (props) => context.parseData(props),
       });
     },
     createSchema: async () => {
