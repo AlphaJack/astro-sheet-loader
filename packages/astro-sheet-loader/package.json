@@ -1,53 +1,54 @@
 {
-	"name": "astro-sheet-loader",
-	"version": "2.0.0",
-	"description": "This package provides a Google Sheets loader for Astro. It allows you to load and parse publicly viewable Sheets, and use the data in your Astro site.",
-	"author": "AlphaJack",
-	"license": "MIT",
-	"homepage": "https://github.com/AlphaJack/astro-sheet-loader#readme",
-	"repository": {
-		"type": "git",
-		"url": "git+https://github.com/AlphaJack/astro-sheet-loader.git"
-	},
-	"bugs": {
-		"url": "https://github.com/AlphaJack/astro-sheet-loader/issues"
-	},
-	"keywords": [
-		"astro-component",
-		"withastro",
-		"astro-loader",
-		"spreadsheet",
-		"google-sheets",
-		"excel",
-		"typescript"
-	],
-	"type": "module",
-	"main": "dist/index.js",
-	"types": "dist/index.d.ts",
-	"exports": {
-		".": {
-			"types": "./dist/index.d.ts",
-			"import": "./dist/index.js"
-		}
-	},
-	"sideEffects": false,
-	"engines": {
-		"node": ">=22.12.0"
-	},
-	"publishConfig": {
-		"provenance": true
-	},
-	"files": ["dist"],
-	"scripts": {
-		"dev": "tsup --watch",
-		"build": "tsup",
-		"readme": "cp ../../README.md .",
-		"prepublishOnly": "npm run build && npm run readme"
-	},
-	"peerDependencies": {
-		"astro": "^6.0.0 || ^7.0.0"
-	},
-	"devDependencies": {
-		"astro": "^7.0.0"
-	}
+  "name": "astro-sheet-loader",
+  "version": "2.0.0",
+  "description": "This package provides a Google Sheets loader for Astro. It allows you to load and parse publicly viewable Sheets, and use the data in your Astro site.",
+  "keywords": [
+    "astro-component",
+    "astro-loader",
+    "excel",
+    "google-sheets",
+    "spreadsheet",
+    "typescript",
+    "withastro"
+  ],
+  "homepage": "https://github.com/AlphaJack/astro-sheet-loader#readme",
+  "bugs": {
+    "url": "https://github.com/AlphaJack/astro-sheet-loader/issues"
+  },
+  "license": "MIT",
+  "author": "AlphaJack",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/AlphaJack/astro-sheet-loader.git"
+  },
+  "files": [
+    "dist"
+  ],
+  "type": "module",
+  "sideEffects": false,
+  "main": "dist/index.mjs",
+  "types": "dist/index.d.mts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.mts",
+      "import": "./dist/index.mjs"
+    }
+  },
+  "publishConfig": {
+    "provenance": true
+  },
+  "scripts": {
+    "dev": "vp pack --watch",
+    "build": "vp pack",
+    "prepack": "vp pack && cp ../../README.md ."
+  },
+  "devDependencies": {
+    "astro": "^7.4.4"
+  },
+  "peerDependencies": {
+    "astro": "^6.0.0 || ^7.0.0"
+  },
+  "engines": {
+    "node": ">=22.12.0"
+  }
 }

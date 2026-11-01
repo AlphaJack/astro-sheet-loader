@@ -1,5 +1,0 @@
-{
-	"files": {
-		"ignore": ["demo/", "node_modules/*", "packages/*/dist/*"]
-	}
-}

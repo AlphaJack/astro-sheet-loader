@@ -1,5 +1,3 @@
-# .github/workflows/ci.yml
-
 name: CI
 
 on:
@@ -9,44 +7,67 @@ on:
     branches: [master]
   workflow_dispatch:
 
-jobs:
-  build-and-test:
-    runs-on: ubuntu-latest
+permissions: {}
 
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v7
+      - name: Check out the repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Install pnpm
+        # version from "packageManager" in package.json
+        uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
 
       - name: Set up Node.js
-        uses: actions/setup-node@v6
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: 22
+          package-manager-cache: false
 
       - name: Install dependencies
-        run: npm install
+        run: pnpm install --frozen-lockfile
 
-      - name: Format code
-        run: npm run format
+      - name: Build the package
+        run: pnpm build:packages
+
+      - name: Check format, lint and types
+        run: pnpm check
 
       - name: Run offline tests
-        run: npm test
+        run: pnpm test
+
+      - name: Build the demo
+        run: pnpm build:demo
 
   # opt-in job hitting the live Google Sheets API, run it manually from the Actions tab
   online-test:
     if: github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
-
+    permissions:
+      contents: read
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v7
+      - name: Check out the repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
 
       - name: Set up Node.js
-        uses: actions/setup-node@v6
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: 22
+          package-manager-cache: false
 
       - name: Install dependencies
-        run: npm install
+        run: pnpm install --frozen-lockfile
 
       - name: Run online tests
-        run: npm run test:online
+        run: pnpm test:online

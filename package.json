@@ -1,24 +1,25 @@
 {
-	"name": "astro-sheet-loader-project",
-	"workspaces": ["demo", "packages/*"],
-	"scripts": {
-		"format": "biome check --write",
-		"dev:demo": "npm run dev --workspace=demo",
-		"dev:packages": "npm run dev --workspace=packages",
-		"dev": "npm run dev:demo",
-		"build:demo": "npm run build --workspace=demo",
-		"build:packages": "npm run build --workspace=packages",
-		"build": "npm run build:packages && npm run build:demo",
-		"test": "npm run build:packages && vitest run",
-		"test:online": "npm run build && TEST_ONLINE=1 vitest run",
-		"preview": "npm run preview --workspace=demo",
-		"pack": "npm run build:packages && npm pack --workspace=packages"
-	},
-	"devDependencies": {
-		"@biomejs/biome": "1.9.4",
-		"@types/node": "^22.10.2",
-		"tsup": "^8.3.5",
-		"typescript": "^5.7.2",
-		"vitest": "^2.1.8"
-	}
+  "name": "astro-sheet-loader-project",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build:packages": "pnpm --filter astro-sheet-loader build",
+    "build:demo": "pnpm --filter demo build",
+    "build": "pnpm build:packages && pnpm build:demo",
+    "dev": "pnpm --filter demo dev",
+    "preview": "pnpm --filter demo preview",
+    "check": "vp check",
+    "fix": "vp check --fix",
+    "test": "pnpm build:packages && vp test",
+    "test:online": "pnpm build && TEST_ONLINE=1 vp test",
+    "pack": "pnpm --filter astro-sheet-loader pack"
+  },
+  "devDependencies": {
+    "@types/node": "^22.20.5",
+    "astro": "^7.4.4",
+    "astro-sheet-loader": "workspace:*",
+    "typescript": "^5.9.3",
+    "vite-plus": "1.4.0"
+  },
+  "packageManager": "pnpm@12.15.0"
 }
