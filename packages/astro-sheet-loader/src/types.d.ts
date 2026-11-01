@@ -11,72 +11,79 @@ export type transformHeaderType = false | ((text: string | number) => string);
 // ################################ JSON
 
 export interface Cell {
-	f?: string;
-	v: string | number | null;
+  f?: string;
+  v: string | number | null;
 }
 
 export interface Row {
-	c: (Cell | null)[];
+  c: (Cell | null)[];
 }
 
 export interface Column {
-	id: string;
-	label: string;
-	type: string;
-	pattern?: string;
+  id: string;
+  label: string;
+  type: string;
+  pattern?: string;
 }
 
 export interface TableData {
-	cols: Column[];
-	rows: Row[];
+  cols: Column[];
+  rows: Row[];
 }
 
 export interface ErrorData {
-	reason: string;
-	message: string;
-	detailed_message: string;
+  reason: string;
+  message: string;
+  detailed_message: string;
+}
+
+export interface WarningData {
+  reason: string;
+  message?: string;
+  detailed_message?: string;
 }
 
 // table may not be present if status == "error", so we account for it
 export interface JSONData {
-	version: string;
-	reqId: string;
-	status: string;
-	errors?: ErrorData[];
-	sig: string;
-	table: TableData;
+  version: string;
+  reqId: string;
+  status: "ok" | "warning" | "error";
+  errors?: ErrorData[];
+  warnings?: WarningData[];
+  sig: string;
+  table: TableData;
 }
 
 // ################################ Schema
 
 export interface sheetSchemaToZodSchemaOptions {
-	/** List of columns from Sheet API */
-	cols: Column[];
-	/** Apply a transformation function to the header row */
-	transformHeader?: transformHeaderType;
-	/** If columns may have null values: `true` for all of them, or a list of column names */
-	allowBlanks?: boolean | string[];
+  /** List of columns from Sheet API */
+  cols: Column[];
+  /** Apply a transformation function to the header row */
+  transformHeader?: transformHeaderType;
+  /** If columns may have null values: `true` for all of them, or a list of column names */
+  allowBlanks?: boolean | string[];
 }
 
 // ################################ Loader
 
 export interface ProcessHeaderOptions {
-	cols: Column[];
-	transformHeader: transformHeaderType;
-	collection: LoaderContext["collection"];
-	logger: LoaderContext["logger"];
+  cols: Column[];
+  transformHeader: transformHeaderType;
+  collection: LoaderContext["collection"];
+  logger: LoaderContext["logger"];
 }
 
 export interface ProcessContentOptions {
-	rows: Row[];
-	columns: string[];
-	/** Column whose values are used as entry IDs */
-	idColumn?: string;
-	collection: LoaderContext["collection"];
-	logger: LoaderContext["logger"];
-	store: LoaderContext["store"];
-	generateDigest: LoaderContext["generateDigest"];
-	parseData: LoaderContext["parseData"];
+  rows: Row[];
+  columns: string[];
+  /** Column whose values are used as entry IDs */
+  idColumn?: string;
+  collection: LoaderContext["collection"];
+  logger: LoaderContext["logger"];
+  store: LoaderContext["store"];
+  generateDigest: LoaderContext["generateDigest"];
+  parseData: LoaderContext["parseData"];
 }
 
 // ################################ Main
@@ -85,20 +92,22 @@ export interface ProcessContentOptions {
  * Options for the Sheet loader
  */
 export interface SheetLoaderOptions {
-	/** The document ID */
-	document: string;
-	/** The sheet ID */
-	gid?: number;
-	/** The sheet name */
-	sheet?: string;
-	/** The range of cells to load */
-	range?: string;
-	/** Query to apply */
-	query?: string;
-	/** Apply a transformation function to the header row, like `camelCase` or `snake_case` */
-	transformHeader?: transformHeaderType;
-	/** Don't fail validation if some entries miss some values: `true` for the whole table, or a list of column names (named after `transformHeader` is applied) that may be blank */
-	allowBlanks?: boolean | string[];
-	/** Use the values of this column (named after `transformHeader` is applied) as entry IDs, instead of positional `row_N` IDs. Values must be unique and non-empty */
-	idColumn?: string;
+  /** The document ID */
+  document: string;
+  /** The sheet ID */
+  gid?: number;
+  /** The sheet name */
+  sheet?: string;
+  /** The range of cells to load */
+  range?: string;
+  /** Query to apply */
+  query?: string;
+  /** Number of header rows. Google guesses it when unset, which can merge data into column names or leave them blank */
+  headers?: number;
+  /** Apply a transformation function to the header row, like `camelCase` or `snake_case` */
+  transformHeader?: transformHeaderType;
+  /** Don't fail validation if some entries miss some values: `true` for the whole table, or a list of column names (named after `transformHeader` is applied) that may be blank */
+  allowBlanks?: boolean | string[];
+  /** Use the values of this column (named after `transformHeader` is applied) as entry IDs, instead of positional `row_N` IDs. Values must be unique and non-empty */
+  idColumn?: string;
 }
